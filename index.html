@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blynk IoT Control</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 40px; }
+    button { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>🌐 Blynk IoT Control Panel</h1>
+
+  <button onclick="turnOn()">Turn ON</button>
+  <button onclick="turnOff()">Turn OFF</button>
+  <p>Status: <span id="status">Unknown</span></p>
+
+  <script>
+    const token = "PASTE_YOUR_TOKEN_HERE"; // replace with your token
+    const pin = "V1"; // change to your actual virtual pin
+
+    function turnOn() {
+      fetch(`https://blynk.cloud/external/api/update?token=${token}&pin=${pin}&value=1`)
+        .then(() => { document.getElementById("status").textContent = "ON"; })
+        .catch(err => console.error(err));
+    }
+
+    function turnOff() {
+      fetch(`https://blynk.cloud/external/api/update?token=${token}&pin=${pin}&value=0`)
+        .then(() => { document.getElementById("status").textContent = "OFF"; })
+        .catch(err => console.error(err));
+    }
+
+    function getStatus() {
+      fetch(`https://blynk.cloud/external/api/get?token=${token}&pin=${pin}`)
+        .then(res => res.text())
+        .then(value => {
+          document.getElementById("status").textContent = value == "1" ? "ON" : "OFF";
+        })
+        .catch(err => console.error(err));
+    }
+
+    setInterval(getStatus, 2000);
+  </script>
+</body>
+</html>

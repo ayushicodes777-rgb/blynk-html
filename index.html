@@ -13,33 +13,63 @@
   <button onclick="turnOn()">Turn ON</button>
   <button onclick="turnOff()">Turn OFF</button>
   <p>Status: <span id="status">Unknown</span></p>
+  <p>Soil Moisture: <span id="moisture">Loading...</span></p>
+
 
   <script>
-    const token = "PASTE_YOUR_TOKEN_HERE"; // replace with your token
-    const pin = "V1"; // change to your actual virtual pin
+  const token = "u5eqsaFhkcLU6szx97fDPMjNFQ5kSnj"; // put your Blynk token here (keep quotes)
+  // V1 -> Soil moisture (from NodeMCU)
+  // V2 -> Relay control (pump)
+  
+  // Update relay (V2)
+  function turnOn() {
+    fetch(`https://blynk.cloud/external/api/update?token=${token}&pin=V2&value=1`)
+      .then(() => { document.getElementById("status").textContent = "ON"; })
+      .catch(err => console.error(err));
+  }
 
-    function turnOn() {
-      fetch(`https://blynk.cloud/external/api/update?token=${token}&pin=${pin}&value=1`)
-        .then(() => { document.getElementById("status").textContent = "ON"; })
-        .catch(err => console.error(err));
-    }
+  function turnOff() {
+    fetch(`https://blynk.cloud/external/api/update?token=${token}&pin=V2&value=0`)
+      .then(() => { document.getElementById("status").textContent = "OFF"; })
+      .catch(err => console.error(err));
+  }
 
-    function turnOff() {
-      fetch(`https://blynk.cloud/external/api/update?token=${token}&pin=${pin}&value=0`)
-        .then(() => { document.getElementById("status").textContent = "OFF"; })
-        .catch(err => console.error(err));
-    }
+  // Read soil moisture (V1)
+  function getMoisture() {
+    fetch(`https://blynk.cloud/external/api/get?token=${token}&pin=V1`)
+      .then(res => res.text())
+      .then(value => {
+        // sometimes Blynk returns an array like [123], handle that:
+        try {
+          if (value.startsWith("[")) {
+            value = JSON.parse(value)[0];
+          }
+        } catch(e) {}
+        document.getElementById("moisture").textContent = value;
+      })
+      .catch(err => console.error(err));
+  }
 
-    function getStatus() {
-      fetch(`https://blynk.cloud/external/api/get?token=${token}&pin=${pin}`)
-        .then(res => res.text())
-        .then(value => {
-          document.getElementById("status").textContent = value == "1" ? "ON" : "OFF";
-        })
-        .catch(err => console.error(err));
-    }
+  // Also keep the status check for relay (optional)
+  function getStatus() {
+    fetch(`https://blynk.cloud/external/api/get?token=${token}&pin=V2`)
+      .then(res => res.text())
+      .then(value => {
+        try {
+          if (value.startsWith("[")) value = JSON.parse(value)[0];
+        } catch(e) {}
+        document.getElementById("status").textContent = (value == "1" ? "ON" : "OFF");
+      })
+      .catch(err => console.error(err));
+  }
 
-    setInterval(getStatus, 2000);
-  </script>
+  // call both every 2 seconds
+  setInterval(() => { getMoisture(); getStatus(); }, 2000);
+
+  // first-time immediate fetch
+  getMoisture();
+  getStatus();
+</script>
+
 </body>
 </html>
